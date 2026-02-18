@@ -1,0 +1,7 @@
+# Transaction data (sensitive financial data)
+*.csv
+*.xml
+
+# Python
+__pycache__/
+*.pyc
