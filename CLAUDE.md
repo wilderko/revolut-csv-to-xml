@@ -16,9 +16,9 @@ python3 revolut_to_xml.py --iban <IBAN> --input <CSV_FILE> [--output <XML_FILE>]
 - `--iban`: Revolut Business IBAN (e.g., `LT523250022607462922`)
 - `--input`: Path to Revolut CSV export (`transaction-statement_*.csv`)
 - `--output`: Optional; auto-generates as `{IBAN}_{startdate}_{enddate}.xml` if omitted
-- `--owner`: Account owner name (default: `Nethemba s.r.o.`)
-- `--addr-line1`: Owner address line 1 (default: `Grosslingova 2503/62`)
-- `--addr-line2`: Owner address line 2 (default: `Bratislava - St. Mesto 81109 SK`)
+- `--owner`: Account owner name (default: `Company s.r.o.`)
+- `--addr-line1`: Owner address line 1 (default: `Street number`)
+- `--addr-line2`: Owner address line 2 (default: `City, Post Code`)
 
 No external dependencies — uses only Python stdlib (`csv`, `xml.etree.ElementTree`, `decimal`, `argparse`).
 

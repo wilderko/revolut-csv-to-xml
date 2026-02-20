@@ -14,9 +14,9 @@ NAMESPACE = "urn:iso:std:iso:20022:tech:xsd:camt.053.001.02"
 XSI = "http://www.w3.org/2001/XMLSchema-instance"
 SCHEMA_LOCATION = f"{NAMESPACE} camt.053.001.02.xsd"
 
-DEFAULT_OWNER = "Nethemba s.r.o."
-DEFAULT_ADDR_LINE1 = "Grosslingova 2503/62"
-DEFAULT_ADDR_LINE2 = "Bratislava - St. Mesto 81109 SK"
+DEFAULT_OWNER = "Company s.r.o."
+DEFAULT_ADDR_LINE1 = "Street number"
+DEFAULT_ADDR_LINE2 = "City, Post Code"
 
 SERVICER_BIC = "REVOLT21"
 SERVICER_NAME = "Revolut Bank UAB"
