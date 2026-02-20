@@ -14,9 +14,9 @@ NAMESPACE = "urn:iso:std:iso:20022:tech:xsd:camt.053.001.02"
 XSI = "http://www.w3.org/2001/XMLSchema-instance"
 SCHEMA_LOCATION = f"{NAMESPACE} camt.053.001.02.xsd"
 
-ACCOUNT_OWNER = "Nethemba s.r.o."
-ACCOUNT_ADDR_LINE1 = "Grosslingova 2503/62"
-ACCOUNT_ADDR_LINE2 = "Bratislava - St. Mesto 81109 SK"
+DEFAULT_OWNER = "Nethemba s.r.o."
+DEFAULT_ADDR_LINE1 = "Grosslingova 2503/62"
+DEFAULT_ADDR_LINE2 = "Bratislava - St. Mesto 81109 SK"
 
 SERVICER_BIC = "REVOLT21"
 SERVICER_NAME = "Revolut Bank UAB"
@@ -76,7 +76,7 @@ def read_csv(path):
     return rows
 
 
-def build_xml(rows, iban):
+def build_xml(rows, iban, owner, addr_line1, addr_line2):
     """Build the camt.053.001.02 XML tree from parsed CSV rows."""
     if not rows:
         print("Error: no transactions found in CSV", file=sys.stderr)
@@ -134,12 +134,12 @@ def build_xml(rows, iban):
     acct_tp = SubElement(acct, "Tp")
     SubElement(acct_tp, "Cd").text = "CACC"
     SubElement(acct, "Ccy").text = "EUR"
-    SubElement(acct, "Nm").text = ACCOUNT_OWNER
+    SubElement(acct, "Nm").text = owner
     ownr = SubElement(acct, "Ownr")
-    SubElement(ownr, "Nm").text = ACCOUNT_OWNER
+    SubElement(ownr, "Nm").text = owner
     ownr_addr = SubElement(ownr, "PstlAdr")
-    SubElement(ownr_addr, "AdrLine").text = ACCOUNT_ADDR_LINE1
-    SubElement(ownr_addr, "AdrLine").text = ACCOUNT_ADDR_LINE2
+    SubElement(ownr_addr, "AdrLine").text = addr_line1
+    SubElement(ownr_addr, "AdrLine").text = addr_line2
     SubElement(ownr_addr, "AdrLine").text = "LITHUANIA"
 
     svcr = SubElement(acct, "Svcr")
@@ -185,7 +185,7 @@ def build_xml(rows, iban):
 
     # Entries
     for idx, r in enumerate(rows, start=1):
-        _add_entry(stmt, r, idx, iban)
+        _add_entry(stmt, r, idx, iban, owner, addr_line1, addr_line2)
 
     return ElementTree(root)
 
@@ -204,7 +204,7 @@ def _add_balance(stmt, code, amount, dt):
     SubElement(dt_el, "Dt").text = dt.isoformat()
 
 
-def _add_entry(stmt, row, seq, iban):
+def _add_entry(stmt, row, seq, iban, owner, addr_line1, addr_line2):
     """Add an Ntry element for one transaction."""
     total_amount = dec(row["Total amount"])
     is_credit = total_amount >= 0
@@ -284,7 +284,7 @@ def _add_entry(stmt, row, seq, iban):
     SubElement(prtry2, "Issr").text = "SBA"
 
     # RltdPties
-    _add_related_parties(tx_dtls, row, is_credit, iban)
+    _add_related_parties(tx_dtls, row, is_credit, iban, owner, addr_line1, addr_line2)
 
     # RltdAgts
     _add_related_agents(tx_dtls, row, is_credit)
@@ -302,12 +302,12 @@ def _add_entry(stmt, row, seq, iban):
     SubElement(tx_dtls, "AddtlTxInf").text = tx_info
 
 
-def _add_related_parties(tx_dtls, row, is_credit, iban):
+def _add_related_parties(tx_dtls, row, is_credit, iban, owner, addr_line1, addr_line2):
     """Add RltdPties element based on transaction direction."""
     parties = SubElement(tx_dtls, "RltdPties")
 
     if is_credit:
-        # CRDT: Dbtr = sender, Cdtr = us (Nethemba)
+        # CRDT: Dbtr = sender, Cdtr = us
         sender_name = extract_sender_name(row.get("Description", ""))
         dbtr = SubElement(parties, "Dbtr")
         SubElement(dbtr, "Nm").text = sender_name
@@ -321,27 +321,27 @@ def _add_related_parties(tx_dtls, row, is_credit, iban):
             SubElement(dbtr_acct, "Nm").text = sender_name
 
         cdtr = SubElement(parties, "Cdtr")
-        SubElement(cdtr, "Nm").text = ACCOUNT_OWNER
+        SubElement(cdtr, "Nm").text = owner
         cdtr_addr = SubElement(cdtr, "PstlAdr")
-        SubElement(cdtr_addr, "AdrLine").text = ACCOUNT_ADDR_LINE1
-        SubElement(cdtr_addr, "AdrLine").text = ACCOUNT_ADDR_LINE2
+        SubElement(cdtr_addr, "AdrLine").text = addr_line1
+        SubElement(cdtr_addr, "AdrLine").text = addr_line2
 
         cdtr_acct = SubElement(parties, "CdtrAcct")
         cdtr_acct_id = SubElement(cdtr_acct, "Id")
         SubElement(cdtr_acct_id, "IBAN").text = iban
-        SubElement(cdtr_acct, "Nm").text = ACCOUNT_OWNER
+        SubElement(cdtr_acct, "Nm").text = owner
     else:
-        # DBIT: Dbtr = us (Nethemba), no Cdtr
+        # DBIT: Dbtr = us, no Cdtr
         dbtr = SubElement(parties, "Dbtr")
-        SubElement(dbtr, "Nm").text = ACCOUNT_OWNER
+        SubElement(dbtr, "Nm").text = owner
         dbtr_addr = SubElement(dbtr, "PstlAdr")
-        SubElement(dbtr_addr, "AdrLine").text = ACCOUNT_ADDR_LINE1
-        SubElement(dbtr_addr, "AdrLine").text = ACCOUNT_ADDR_LINE2
+        SubElement(dbtr_addr, "AdrLine").text = addr_line1
+        SubElement(dbtr_addr, "AdrLine").text = addr_line2
 
         dbtr_acct = SubElement(parties, "DbtrAcct")
         dbtr_acct_id = SubElement(dbtr_acct, "Id")
         SubElement(dbtr_acct_id, "IBAN").text = iban
-        SubElement(dbtr_acct, "Nm").text = ACCOUNT_OWNER
+        SubElement(dbtr_acct, "Nm").text = owner
 
 
 def _add_related_agents(tx_dtls, row, is_credit):
@@ -378,6 +378,12 @@ def main():
     parser.add_argument("--iban", required=True, help="Revolut Business IBAN")
     parser.add_argument("--input", required=True, help="Path to Revolut CSV file")
     parser.add_argument("--output", help="Output XML path (auto-generated if omitted)")
+    parser.add_argument("--owner", default=DEFAULT_OWNER,
+                        help=f"Account owner name (default: {DEFAULT_OWNER})")
+    parser.add_argument("--addr-line1", default=DEFAULT_ADDR_LINE1,
+                        help=f"Owner address line 1 (default: {DEFAULT_ADDR_LINE1})")
+    parser.add_argument("--addr-line2", default=DEFAULT_ADDR_LINE2,
+                        help=f"Owner address line 2 (default: {DEFAULT_ADDR_LINE2})")
     args = parser.parse_args()
 
     rows = read_csv(args.input)
@@ -385,7 +391,7 @@ def main():
         print("Error: no transactions found in CSV", file=sys.stderr)
         sys.exit(1)
 
-    tree = build_xml(rows, args.iban)
+    tree = build_xml(rows, args.iban, args.owner, args.addr_line1, args.addr_line2)
 
     if args.output:
         output_path = args.output
